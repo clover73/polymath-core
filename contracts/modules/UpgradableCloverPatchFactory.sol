@@ -1,20 +1,20 @@
 pragma solidity 0.5.8;
 
-import "./ModuleFactory.sol";
-import "../interfaces/IModuleRegistry.sol";
+import "./CloverPatchFactory.sol";
+import "../interfaces/ICloverPatchRegistry.sol";
 import "../proxy/OwnedUpgradeabilityProxy.sol";
 
 
 /**
  * @title Factory for deploying upgradable modules
  */
-contract UpgradableModuleFactory is ModuleFactory {
+contract UpgradableCloverPatchFactory is CloverPatchFactory {
 
     event LogicContractSet(string _version, uint256 _upgrade, address _logicContract, bytes _upgradeData);
 
-    event ModuleUpgraded(
-        address indexed _module,
-        address indexed _securityToken,
+    event CloverPatchUpgraded(
+        address indexed _cloverpatch,
+        address indexed _cloverpatchToken,
         uint256 indexed _version
     );
 
@@ -28,29 +28,29 @@ contract UpgradableModuleFactory is ModuleFactory {
     mapping (uint256 => LogicContract) public logicContracts;
 
     // Mapping from Security Token address, to deployed proxy module address, to module version
-    mapping (address => mapping (address => uint256)) public modules;
+    mapping (address => mapping (address => uint256)) public cloverpatch;
 
     // Mapping of which security token owns a given module
-    mapping (address => address) public moduleToSecurityToken;
+    mapping (address => address) public cloverpatchToCloverPatchToken;
 
     // Current version
     uint256 public latestUpgrade;
 
     /**
      * @notice Constructor
-     * @param _setupCost Setup cost of the module
+     * @param _setupCost Setup cost of the cloverpatch
       * @param _logicContract Contract address that contains the logic related to `description`
-     * @param _polymathRegistry Address of the Polymath registry
-     * @param _isCostInPoly true = cost in Poly, false = USD
+     * @param _cloverpatchmathRegistry Address of the CloverPatchmath registry
+     * @param _isCostInClovers true = cost in Clovers, false = USD
      */
     constructor(
         string memory _version,
         uint256 _setupCost,
         address _logicContract,
-        address _polymathRegistry,
-        bool _isCostInPoly
+        address _cloverpatchmathRegistry,
+        bool _isCostInClovers
     )
-        public ModuleFactory(_setupCost, _polymathRegistry, _isCostInPoly)
+        public CloverPatchFactory(_setupCost, _cloverpatchmathRegistry, _isCostInClovers)
     {
         require(_logicContract != address(0), "Invalid address");
         logicContracts[latestUpgrade].logicContract = _logicContract;
@@ -94,8 +94,8 @@ contract UpgradableModuleFactory is ModuleFactory {
         logicContracts[_upgrade].version = _version;
         logicContracts[_upgrade].logicContract = _logicContract;
         logicContracts[_upgrade].upgradeData = _upgradeData;
-        IModuleRegistry moduleRegistry = IModuleRegistry(polymathRegistry.getAddress("ModuleRegistry"));
-        moduleRegistry.unverifyModule(address(this));
+        ICloverPatchRegistry cloverpatchRegistry = ICloverPatchRegistry(cloverpatchRegistry.getAddress("CloverPatchRegistry"));
+        cloverpatchRegistry.unverifyCloverPatchaddress(this));
         emit LogicContractSet(_version, _upgrade, _logicContract, _upgradeData);
     }
 
@@ -103,16 +103,16 @@ contract UpgradableModuleFactory is ModuleFactory {
      * @notice Used by a security token to upgrade a given module
      * @param _module Address of (proxy) module to be upgraded
      */
-    function upgrade(address _module) external {
+    function upgrade(address _cloverpatch) external {
         // Only allow the owner of a module to upgrade it
-        require(moduleToSecurityToken[_module] == msg.sender, "Incorrect caller");
+        require(moduleToCloverPatchToken[_cloverpatch] == msg.sender, "Incorrect caller");
         // Only allow issuers to upgrade in single step verisons to preserve upgradeToAndCall semantics
-        uint256 newVersion = modules[msg.sender][_module] + 1;
+        uint256 newVersion = modules[msg.sender][_cloverpatch] + 1;
         require(newVersion <= latestUpgrade, "Incorrect version");
-        OwnedUpgradeabilityProxy(address(uint160(_module))).upgradeToAndCall(logicContracts[newVersion].version, logicContracts[newVersion].logicContract, logicContracts[newVersion].upgradeData);
-        modules[msg.sender][_module] = newVersion;
-        emit ModuleUpgraded(
-            _module,
+        OwnedUpgradeabilityProxy(address(uint160(_cloverpatch))).upgradeToAndCall(logicContracts[newVersion].version, logicContracts[newVersion].logicContract, logicContracts[newVersion].upgradeData);
+        modules[msg.sender][_cloverpatch] = newVersion;
+        emit CloverPatchUpgraded(
+            _cloverpatch,
             msg.sender,
             newVersion
         );
@@ -123,14 +123,14 @@ contract UpgradableModuleFactory is ModuleFactory {
      * @param _module Address of module
      * @param _data Data used for the intialization of the module factory variables
      */
-    function _initializeModule(address _module, bytes memory _data) internal {
-        super._initializeModule(_module, _data);
-        moduleToSecurityToken[_module] = msg.sender;
-        modules[msg.sender][_module] = latestUpgrade;
+    function _initializeCloverPatch(address _cloverpatch, bytes memory _data) internal {
+        super._initializeCloverPatch(_cloverpatch, _data);
+        moduleToCloverPatchToken[_cloverpatch] = msg.sender;
+        modules[msg.sender][_cloverpatch] = latestUpgrade;
     }
 
     /**
-     * @notice Get the version related to the module factory
+     * @notice Get the version related to the cloverpatch factory
      */
     function version() external view returns(string memory) {
         return logicContracts[latestUpgrade].version;
