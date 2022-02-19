@@ -1,12 +1,12 @@
 pragma solidity 0.5.8;
 
-import "../interfaces/IModule.sol";
+import "../interfaces/ICloverPatch.sol";
 import "../Pausable.sol";
-import "../interfaces/IModuleFactory.sol";
+import "../interfaces/ICloverPatchFactory.sol";
 import "../interfaces/IDataStore.sol";
 import "../interfaces/ISecurityToken.sol";
 import "../interfaces/ICheckPermission.sol";
-import "../storage/modules/ModuleStorage.sol";
+import "../storage/modules/CloverPatchStorage.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
@@ -14,13 +14,13 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
  * @title Interface that any module contract should implement
  * @notice Contract is abstract
  */
-contract Module is IModule, ModuleStorage, Pausable {
+contract CloverPatch is ICloverPatch, CloverPatchStorage, Pausable {
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor (address _securityToken, address _polyAddress) public
-    ModuleStorage(_securityToken, _polyAddress)
+    constructor (address _securityToken, address _cloverpatchAddress) public
+    CloverPatchStorage(_securityToken, _cloverpatchAddress)
     {
     }
 
@@ -73,10 +73,10 @@ contract Module is IModule, ModuleStorage, Pausable {
     * @dev We duplicate here due to the overriden owner & onlyOwner
     * @param _tokenContract The address of the token contract
     */
-    function reclaimERC20(address _tokenContract) external {
+    function reclaimERC20(address _cloverpatchtokenContract) external {
         _onlySecurityTokenOwner();
-        require(_tokenContract != address(0), "Invalid address");
-        IERC20 token = IERC20(_tokenContract);
+        require(_cloverpatchtokenContract != address(0), "Invalid address");
+        IERC20 token = IERC20(_cloverpatchtokenContract);
         uint256 balance = token.balanceOf(address(this));
         require(token.transfer(msg.sender, balance), "Transfer failed");
     }
