@@ -2,7 +2,7 @@ pragma solidity 0.5.8;
 
 import "../libraries/VersionUtils.sol";
 import "../libraries/Util.sol";
-import "../interfaces/IModule.sol";
+import "../interfaces/ICloverPatch.sol";
 import "../interfaces/IOracle.sol";
 import "../interfaces/IPolymathRegistry.sol";
 import "../interfaces/IModuleFactory.sol";
@@ -14,9 +14,9 @@ import "../libraries/DecimalMath.sol";
  * @title Interface that any module factory contract should implement
  * @notice Contract is abstract
  */
-contract ModuleFactory is IModuleFactory, Ownable {
+contract CloverPatchFactory is ICloverPatchFactoryFactory, Ownable {
 
-    IPolymathRegistry public polymathRegistry;
+    ICloverPatchRegistry public CloverPatchRegistry;
 
     string initialVersion;
     bytes32 public name;
@@ -26,10 +26,10 @@ contract ModuleFactory is IModuleFactory, Ownable {
     uint8[] typesData;
     bytes32[] tagsData;
 
-    bool public isCostInPoly;
+    bool public isCostInClovers;
     uint256 public setupCost;
 
-    string constant POLY_ORACLE = "StablePolyUsdOracle";
+    string constant CLOVERPATCH_ORACLE = "StableCLOVERPATCHUsdOracle";
 
     // @notice Allow only two variables to be stored
     // 1. lowerBound
@@ -41,14 +41,14 @@ contract ModuleFactory is IModuleFactory, Ownable {
     /**
      * @notice Constructor
      */
-    constructor(uint256 _setupCost, address _polymathRegistry, bool _isCostInPoly) public {
+    constructor(uint256 _setupCost, address _cloverpatchmathRegistry, bool _isCostInClovers) public {
         setupCost = _setupCost;
-        polymathRegistry = IPolymathRegistry(_polymathRegistry);
-        isCostInPoly = _isCostInPoly;
+        cloverpatchmathRegistry = ICloverPatchmathRegistry(_cloverpatchmathRegistry);
+        isCostInClovers = _isCostInClovers;
     }
 
     /**
-     * @notice Type of the Module factory
+     * @notice Type of the Gold factory
      */
     function getTypes() external view returns(uint8[] memory) {
         return typesData;
@@ -62,7 +62,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice Get the version related to the module factory
+     * @notice Get the version related to the gold factory
      */
     function version() external view returns(string memory) {
         return initialVersion;
@@ -80,17 +80,17 @@ contract ModuleFactory is IModuleFactory, Ownable {
     /**
      * @notice Used to change the currency and amount of setup cost
      * @param _setupCost new setup cost
-     * @param _isCostInPoly new setup cost currency. USD or POLY
+     * @param _isCostInClovers new setup cost currency. USD or CLOVERS
      */
-    function changeCostAndType(uint256 _setupCost, bool _isCostInPoly) public onlyOwner {
+    function changeCostAndType(uint256 _setupCost, bool _isCostInClovers) public onlyOwner {
         emit ChangeSetupCost(setupCost, _setupCost);
-        emit ChangeCostType(isCostInPoly, _isCostInPoly);
+        emit ChangeCostType(isCostInClovers, _isCostInClovers);
         setupCost = _setupCost;
-        isCostInPoly = _isCostInPoly;
+        isCostInClovers = _isCostInClovers;
     }
 
     /**
-     * @notice Updates the title of the ModuleFactory
+     * @notice Updates the title of the CloverPatchFactory
      * @param _title New Title that will replace the old one.
      */
     function changeTitle(string memory _title) public onlyOwner {
@@ -99,7 +99,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice Updates the description of the ModuleFactory
+     * @notice Updates the description of the CloverPatchFactory
      * @param _description New description that will replace the old one.
      */
     function changeDescription(string memory _description) public onlyOwner {
@@ -108,7 +108,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice Updates the name of the ModuleFactory
+     * @notice Updates the name of the CloverPatchFactory
      * @param _name New name that will replace the old one.
      */
     function changeName(bytes32 _name) public onlyOwner {
@@ -117,7 +117,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice Updates the tags of the ModuleFactory
+     * @notice Updates the tags of the CloverPatchFactory
      * @param _tagsData New list of tags
      */
     function changeTags(bytes32[] memory _tagsData) public onlyOwner {
@@ -172,20 +172,20 @@ contract ModuleFactory is IModuleFactory, Ownable {
     function setupCostInPoly() public returns (uint256) {
         if (isCostInPoly)
             return setupCost;
-        uint256 polyRate = IOracle(polymathRegistry.getAddress(POLY_ORACLE)).getPrice();
-        return DecimalMath.div(setupCost, polyRate);
+        uint256 cloverRate = IOracle(cloverpatchmathRegistry.getAddress(CLOVERPATCH_ORACLE)).getPrice();
+        return DecimalMath.div(setupCost, cloverRate);
     }
 
     /**
-     * @notice Calculates fee in POLY
+     * @notice Calculates fee in CLOVERS
      */
     function _takeFee() internal returns(uint256) {
-        uint256 polySetupCost = setupCostInPoly();
-        address polyToken = polymathRegistry.getAddress("PolyToken");
-        if (polySetupCost > 0) {
-            require(IERC20(polyToken).transferFrom(msg.sender, owner(), polySetupCost), "Insufficient allowance for module fee");
+        uint256 polySetupCost = setupCostInClovers();
+        address cloverpatchToken = cloverpatchmathRegistry.getAddress("CloverPatchToken");
+        if (cloverpatchSetupCost > 0) {
+            require(IERC20(cloverpatchToken).transferFrom(msg.sender, owner(), cloverpatchSetupCost), "Insufficient allowance for module fee");
         }
-        return polySetupCost;
+        return cloverpatchSetupCost;
     }
 
     /**
@@ -193,17 +193,17 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _module Address of module
      * @param _data Data used for the intialization of the module factory variables
      */
-    function _initializeModule(address _module, bytes memory _data) internal {
-        uint256 polySetupCost = _takeFee();
-        bytes4 initFunction = IModule(_module).getInitFunction();
+    function _initializeModule(address _cloverpatch, bytes memory _data) internal {
+        uint256 cloverpatchSetupCost = _takeFee();
+        bytes4 initFunction = ICloverPatch(_cloverpatch).getInitFunction();
         if (initFunction != bytes4(0)) {
             require(Util.getSig(_data) == initFunction, "Provided data is not valid");
             /*solium-disable-next-line security/no-low-level-calls*/
-            (bool success, ) = _module.call(_data);
+            (bool success, ) = _cloverpatch.call(_data);
             require(success, "Unsuccessful initialization");
         }
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(_module, name, address(this), msg.sender, setupCost, polySetupCost);
+        emit GenerateCloverPatchFromFactory(_cloverpatch, name, address(this), msg.sender, setupCost, cloverpatchSetupCost);
     }
 
 }
